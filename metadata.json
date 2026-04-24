@@ -1,0 +1,6 @@
+{
+  "name": "Graph RAG App",
+  "description": "FastAPI + LlamaIndex + Neo4j RAG phase 1 starter code",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
