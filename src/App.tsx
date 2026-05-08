@@ -11,10 +11,12 @@ import {
   Activity,
   AlertTriangle,
   ChevronDown,
+  UploadCloud,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import { GraphView } from './components/GraphView';
+import { UploadPanel } from './components/UploadPanel';
 import {
   queryRag,
   queryHybrid,
@@ -24,6 +26,7 @@ import {
   type HybridQueryResponse,
   type AgentQueryResponse,
   type ContradictionExplanation,
+  type UploadResponse,
 } from './services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -145,7 +148,8 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<QueryMode>('hybrid');
-  const [activeTab, setActiveTab] = useState<'chat' | 'graph'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'graph' | 'upload'>('chat');
+  const [uploadCount, setUploadCount] = useState(0);
   const [currentSources, setCurrentSources] = useState<Source[]>([]);
   const [contradictionResult, setContradictionResult] = useState<string | null>(null);
   const [isCheckingContradictions, setIsCheckingContradictions] = useState(false);
@@ -205,6 +209,11 @@ export default function App() {
     },
     []
   );
+
+  // ── Upload success handler ────────────────────────────────────────────────
+  const handleUploadSuccess = useCallback((_response: UploadResponse) => {
+    setUploadCount((c) => c + 1);
+  }, []);
 
   // ── Main submit ───────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
@@ -334,6 +343,16 @@ export default function App() {
             title="Graph Explorer"
           >
             <Network className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setActiveTab('upload')}
+            className={cn('p-2 rounded w-full flex justify-center transition-all relative', activeTab === 'upload' ? 'bg-[#1e2128] text-indigo-400' : 'text-[#6b7280] hover:text-[#9ca3af] hover:bg-[#1a1c22]')}
+            title="Upload PDF"
+          >
+            <UploadCloud className="w-5 h-5" />
+            {uploadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500" />
+            )}
           </button>
         </nav>
       </aside>
@@ -486,7 +505,7 @@ export default function App() {
                     </div>
                   )}
                 </motion.div>
-              ) : (
+              ) : activeTab === 'graph' ? (
                 <motion.div
                   key="graph"
                   initial={{ opacity: 0 }}
@@ -496,10 +515,21 @@ export default function App() {
                 >
                   <GraphView data={graphData} />
                 </motion.div>
+              ) : (
+                <motion.div
+                  key="upload"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex-1 max-w-xl mx-auto w-full"
+                >
+                  <UploadPanel onUploadSuccess={handleUploadSuccess} />
+                </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Input bar */}
+            {/* Input bar — hidden on upload tab */}
+            {activeTab !== 'upload' && (
             <div className="absolute bottom-6 left-0 right-0 px-6 pointer-events-none">
               <div className="max-w-4xl mx-auto w-full pointer-events-auto space-y-2">
 
@@ -560,6 +590,7 @@ export default function App() {
                 </form>
               </div>
             </div>
+            )}
           </div>
 
           {/* Sources panel */}
